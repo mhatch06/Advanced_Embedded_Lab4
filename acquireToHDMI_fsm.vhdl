@@ -33,10 +33,11 @@ architecture Behavioral of acquireToHDMI_fsm is
 
 	signal state: state_type;	-- define the state_type in your package file	
 	signal SHORT_DELAY_DONE_SW,: STD_LOGIC; 
-    	signal FORCED_MODE_SW, STORE_INTO_BRAM_SW, CH1_TRIGGER_SW: STD_LOGIC;
+    	signal FORCED_MODE_SW, STORE_INTO_BRAM_SW, CH1_TRIGGER_SW: STD_LOGIC; ADD MORE STATUS WORDS
 begin
 
     SHORT_DELAY_DONE_SW <= sw(SHORT_DELAY_DONE_SW_BIT_INDEX);
+	NEED TO DO THE REST OF THE SWS!
     
 	-------------------------------------------------------------------------------
 	-------------------------------------------------------------------------------
@@ -49,6 +50,34 @@ begin
 				case state is				
 					when RESET_STATE =>
 						  state <= LONG_DELAY_STATE;
+
+					when LONG_DELAY_STATE =>
+						IF (LONG_DELAY_DONE_SW ='1') THEN 
+							state <= RESET_AD7606_STATE;
+						END IF;
+
+					WHEN RESET_AD7606_STATE =>
+						IF (SHORT_DELAY_DONE_SW = '1') THEN
+							state <= WAIT_FORCED_STATE;
+						END IF;
+
+					WHEN WAIT_FORCED_STATE =>
+						IF (SINGLE_SW = '1' AND ) THEN
+							state <= SET_STORE_FLAG_STATE; --THIS RIGHT? POSSIBLY ADD IF FOR TRIGGER 
+						END IF;
+						IF ()
+
+					WHEN SET_STORE_FLAG_STATE =>
+						state <= BEGIN_CONVERSION_STATE;
+
+					WHEN BEGIN_CONVERSION_STATE =>
+						state <= ASSERT_CONVST_STATE;
+
+					WHEN ASSERT_CONVST_STATE =>
+						state <= BUSY
+					 TODO
+
+					
 						  
 				end case;
 			end if;
