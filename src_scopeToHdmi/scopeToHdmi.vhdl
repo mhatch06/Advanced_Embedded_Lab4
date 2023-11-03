@@ -14,7 +14,7 @@ entity scopeToHdmi is
          tmdsDataN : out  STD_LOGIC_VECTOR (2 downto 0);
          tmdsClkP : out STD_LOGIC;
          tmdsClkN : out STD_LOGIC;
-         hdmiOen:    out STD_LOGIC);
+         hdmiOen:    out STD_LOGIC); 
 end scopeToHdmi;
 
 
@@ -114,17 +114,19 @@ begin
         if rising_edge(sysClk) then
             if resetn = '0' then
                 btnPressed <= "000";
+                triggerTime <= std_logic_vector(to_unsigned(650, VIDEO_WIDTH_IN_BITS));
+                triggerVolt <= std_logic_vector(to_unsigned(360, VIDEO_WIDTH_IN_BITS));
             else
                 btnPressed <= (btnLast xor btn) and btn;
                 
                 if   ((btnPressed(0) = '1') and (btn(2) = '0')) then
-                    triggerTime <= triggerTime + 100;
+                    triggerTime <= triggerTime + 10;
                 elsif((btnPressed(0) = '1') and (btn(2) = '1')) then
-                    triggerTime <= triggerTime - 100;
+                    triggerTime <= triggerTime - 10;
                 elsif((btnPressed(1) = '1') and (btn(2) = '0')) then
-                    triggerVolt <= triggerVolt + 100;
+                    triggerVolt <= triggerVolt + 10;
                 elsif((btnPressed(1) = '1') and (btn(2) = '1')) then
-                    triggerVolt <= triggerVolt - 100;
+                    triggerVolt <= triggerVolt - 10;
                 end if;
             end if;
             

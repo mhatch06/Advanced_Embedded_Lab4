@@ -8,7 +8,7 @@ use work.scopeToHdmi_package.all;
 
 
 entity videoSignalGenerator is
-    PORT(	
+    PORT(	 
          clk: in  STD_LOGIC;
          resetn : in  STD_LOGIC;
          hs: out STD_LOGIC;
@@ -116,20 +116,21 @@ begin
         end if;
     end process;
 
-    -- 2: Assert the vertical synch signal
---    process(clk)
---    begin
---        if rising_edge (clk) then
---            if resetn = '0' then
---                vs <= '1';
---            elsif((v_cnt = V_FP - 1) and (h_cnt = H_FP - 1)) then
---                vs <= '0';
---            elsif((v_cnt = V_FP + V_SYNC - 1) and (h_cnt = H_FP - 1)) then
---                vs <= '1';       
---            end if;
---        end if;
---    end process;
-vs <= '0';
+     --2: Assert the vertical synch signal
+    process(clk)
+    begin
+        if rising_edge (clk) then
+            if resetn = '0' then
+                vs <= '1';
+            elsif((v_cnt = V_FP - 1) and (h_cnt = H_FP - 1)) then
+                vs <= '0';
+            elsif((v_cnt = V_FP + V_SYNC - 1) and (h_cnt = H_FP - 1)) then
+                vs <= '1';       
+            end if;
+        end if;
+    end process;
+    
+    --vs <= '1';
 
 
     -- 3: Generate the pixelVert signal that is used by

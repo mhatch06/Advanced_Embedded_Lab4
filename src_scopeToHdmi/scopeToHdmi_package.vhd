@@ -73,36 +73,24 @@ package scopeToHdmi_package is
     -- You should create constants for your display colors so that modify the colors 
     -- to make things look just right.
     constant BORDER_R : STD_LOGIC_VECTOR(7 downto 0) := X"FF";
-    constant BORDER_G : STD_LOGIC_VECTOR(7 downto 0) := X"CC";
-    constant BORDER_B : STD_LOGIC_VECTOR(7 downto 0) := X"CC";
+    constant BORDER_G : STD_LOGIC_VECTOR(7 downto 0) := X"FF";
+    constant BORDER_B : STD_LOGIC_VECTOR(7 downto 0) := X"FF";
 
     -- Finish and add more 
-    constant GRID_R : STD_LOGIC_VECTOR(7 downto 0) := X"D3";
-    constant GRID_G : STD_LOGIC_VECTOR(7 downto 0) := X"D3";
-    constant GRID_B : STD_LOGIC_VECTOR(7 downto 0) := X"D3";
+    constant GRID_R : STD_LOGIC_VECTOR(7 downto 0) := X"40";
+    constant GRID_G : STD_LOGIC_VECTOR(7 downto 0) := X"40";
+    constant GRID_B : STD_LOGIC_VECTOR(7 downto 0) := X"40";
 
-    constant AXIS_R : STD_LOGIC_VECTOR(7 downto 0) := X"00";
-    constant AXIS_G : STD_LOGIC_VECTOR(7 downto 0) := X"00";
-    constant AXIS_B : STD_LOGIC_VECTOR(7 downto 0) := X"00";
+    constant TRIG_R : STD_LOGIC_VECTOR(7 downto 0) := X"00";
+    constant TRIG_G : STD_LOGIC_VECTOR(7 downto 0) := X"FF";
+    constant TRIG_B : STD_LOGIC_VECTOR(7 downto 0) := X"FF";   
 
-    constant HATCH_R : STD_LOGIC_VECTOR(7 downto 0) := X"00";
-    constant HATCH_G : STD_LOGIC_VECTOR(7 downto 0) := X"00";
-    constant HATCH_B : STD_LOGIC_VECTOR(7 downto 0) := X"FF";
+    constant CH1_R : STD_LOGIC_VECTOR(7 downto 0) := X"FF";
+    constant CH1_G : STD_LOGIC_VECTOR(7 downto 0) := X"FF";   
+    constant CH1_B : STD_LOGIC_VECTOR(7 downto 0) := X"00";
 
-    constant V_TRIG_R : STD_LOGIC_VECTOR(7 downto 0) := X"00";
-    constant V_TRIG_G : STD_LOGIC_VECTOR(7 downto 0) := X"FF";
-    constant V_TRIG_B : STD_LOGIC_VECTOR(7 downto 0) := X"00";   
-
-    constant T_TRIG_R : STD_LOGIC_VECTOR(7 downto 0) := X"FF";
-    constant T_TRIG_G : STD_LOGIC_VECTOR(7 downto 0) := X"FF";
-    constant T_TRIG_B : STD_LOGIC_VECTOR(7 downto 0) := X"00"; 
-
-    constant CH1_R : STD_LOGIC_VECTOR(7 downto 0) := X"4B";
-    constant CH1_G : STD_LOGIC_VECTOR(7 downto 0) := X"00";   
-    constant CH1_B : STD_LOGIC_VECTOR(7 downto 0) := X"82";
-
-    constant CH2_R : STD_LOGIC_VECTOR(7 downto 0) := X"FF";
-    constant CH2_G : STD_LOGIC_VECTOR(7 downto 0) := X"00";   
+    constant CH2_R : STD_LOGIC_VECTOR(7 downto 0) := X"00";
+    constant CH2_G : STD_LOGIC_VECTOR(7 downto 0) := X"FF";   
     constant CH2_B : STD_LOGIC_VECTOR(7 downto 0) := X"00";
 
 

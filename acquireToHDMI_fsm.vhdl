@@ -17,84 +17,161 @@
 -- code.  I also understand that if I knowingly give my original work to 
 -- another individual is also a violation of the honor code. 
 ------------------------------------------------------------------------- 
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use work.acquireToHDMI_package.all;					-- include your library here with added components ac97, ac97cmd
+LIBRARY IEEE;
+USE IEEE.STD_LOGIC_1164.ALL;
+USE work.acquireToHDMI_package.ALL; -- include your library here with added components ac97, ac97cmd
 
+ENTITY acquireToHDMI_fsm IS
+	PORT (
+		clk : IN STD_LOGIC;
+		resetn : IN STD_LOGIC;
+		sw : IN STD_LOGIC_VECTOR(SW_WIDTH - 1 DOWNTO 0);
+		cw : OUT STD_LOGIC_VECTOR (CW_WIDTH - 1 DOWNTO 0));
+END acquireToHDMI_fsm;
 
-entity acquireToHDMI_fsm is
-    PORT (  clk : in  STD_LOGIC;
-            resetn : in  STD_LOGIC;
-            sw: in STD_LOGIC_VECTOR(SW_WIDTH - 1 downto 0);
-            cw: out STD_LOGIC_VECTOR (CW_WIDTH - 1 downto 0));
-end acquireToHDMI_fsm;
+ARCHITECTURE Behavioral OF acquireToHDMI_fsm IS
 
-architecture Behavioral of acquireToHDMI_fsm is
+	SIGNAL state : state_type; -- define the state_type in your package file	
 
-	signal state: state_type;	-- define the state_type in your package file	
-	signal SHORT_DELAY_DONE_SW,: STD_LOGIC; 
-    	signal FORCED_MODE_SW, STORE_INTO_BRAM_SW, CH1_TRIGGER_SW: STD_LOGIC; ADD MORE STATUS WORDS
-begin
+	-- status words
+	SIGNAL
+	AD7606_BUSY_SW,
+	STORE_TO_BRAM_SW,
+	CH2_TRIGGER_SW,
+	CH1_TRIGGER_SW,
+	LONG_DELAY_SW,
+	SHORT_DELAY_SW,
+	FULL_SW,
+	SAMPLE_SW,
+	TRIGGER_SW,
+	STORE_SW,
+	FORCED_SW,
+	SINGLE_SW : STD_LOGIC;
 
-    SHORT_DELAY_DONE_SW <= sw(SHORT_DELAY_DONE_SW_BIT_INDEX);
-	NEED TO DO THE REST OF THE SWS!
-    
+BEGIN
+
+	-- status words
+	AD7606_BUSY_SW <= sw(AD7606_BUSY_SW_INDEX);
+	STORE_TO_BRAM_SW <= sw(STORE_TO_BRAM_SW_INDEX);
+	CH2_TRIGGER_SW <= sw(CH2_TRIGGER_SW_INDEX);
+	CH1_TRIGGER_SW <= sw(CH1_TRIGGER_SW_INDEX);
+	LONG_DELAY_SW <= sw(LONG_DELAY_SW_INDEX);
+	SHORT_DELAY_SW <= sw(SHORT_DELAY_SW_INDEX);
+	FULL_SW <= sw(FULL_SW_INDEX);
+	SAMPLE_SW <= sw(SAMPLE_SW_INDEX);
+	TRIGGER_SW <= sw(TRIGGER_SW_INDEX);
+	STORE_SW <= sw(STORE_SW_INDEX);
+	FORCED_SW <= sw(FORCED_SW_INDEX);
+	SINGLE_SW <= sw(SINGLE_SW_INDEX);
+
 	-------------------------------------------------------------------------------
 	-------------------------------------------------------------------------------
-	state_proces: process(clk)  
-	begin
-		if (rising_edge(clk)) then
-			if (resetn = '0') then 
+	state_proces : PROCESS (clk)
+	BEGIN
+		IF (rising_edge(clk)) THEN
+			IF (resetn = '0') THEN
 				state <= RESET_STATE;
-			else 
-				case state is				
-					when RESET_STATE =>
-						  state <= LONG_DELAY_STATE;
+			ELSE
+				CASE state IS
+					WHEN RESET_STATE =>
+						state <= LONG_DELAY_STATE;
 
-					when LONG_DELAY_STATE =>
-						IF (LONG_DELAY_DONE_SW ='1') THEN 
+					WHEN LONG_DELAY_STATE =>
+						IF (LONG_DELAY_SW = '1') THEN
 							state <= RESET_AD7606_STATE;
 						END IF;
 
 					WHEN RESET_AD7606_STATE =>
-						IF (SHORT_DELAY_DONE_SW = '1') THEN
+						IF (SHORT_DELAY_SW = '1') THEN
 							state <= WAIT_FORCED_STATE;
 						END IF;
 
+						-- KMAP MOMENT
 					WHEN WAIT_FORCED_STATE =>
-						IF (SINGLE_SW = '1' AND ) THEN
-							state <= SET_STORE_FLAG_STATE; --THIS RIGHT? POSSIBLY ADD IF FOR TRIGGER 
+						IF (TODO fix this conditional) THEN
+							state <= SET_STORE_FLAG_STATE;
 						END IF;
-						IF ()
-
-					WHEN SET_STORE_FLAG_STATE =>
+					
+					WHEN SET_STORE_FLAG_STATE => --
 						state <= BEGIN_CONVERSION_STATE;
 
-					WHEN BEGIN_CONVERSION_STATE =>
+					WHEN BEGIN_CONVERSION_STATE => --
 						state <= ASSERT_CONVST_STATE;
 
-					WHEN ASSERT_CONVST_STATE =>
+					WHEN ASSERT_CONVST_STATE => --
+						IF (SHORT_DELAY_SW) THEN
+							state <= WAIT_BUSY_0_STATE;
+						END IF;
 						state <= BUSY
-					 TODO
 
-					
-						  
-				end case;
-			end if;
-		end if;
-	end process;
+					WHEN WAIT_BUSY_0_STATE => --
+						IF (AD7606_BUSY_SW) THEN
+							state <= WAIT_BUSY_1_STATE;
+						END IF;
+						state <= BEGIN_CONVERSION_STATE;
 
-	-------------------------------------------------------------------------------
-    -- Dedicated Control Word spreadsheet
-    -------------------------------------------------------------------------------
-	output_process: process (state)
-	begin
-		case state is		
-            when RESET_STATE  =>  cw <= '0'&'0'&'0'&'0'&'0'&'0'&'0'&'0'&'1'&'1'&'1'&'0'&"11"&"11"&"00"&"11"&"11";
-		end case;
-	end process;	                       
+					WHEN WAIT_BUSY_1_STATE => --
+						IF (not AD_7606_BUSY_SW) THEN
+							state <= READ_CH1_LOW_STATE;
+						END IF;
+						state <= ASSERT_CONVST_STATE;
 
-end Behavioral;
+					WHEN READ_CH1_LOW_STATE =>
+						-- TODO logic here
+						state <= BUSY;
 
+					WHEN WRITE_CH1_TRIGGER_STATE => --
+						state <= READ_CH1_HIGH_STATE;
 
+					WHEN WRITE_CH1_BRAM_STATE => --
+						state <= READ_CH1_HIGH_STATE;
 
+					WHEN READ_CH1_HIGH_STATE =>
+						-- todo logic here
+						state <= ???;
+
+					WHEN RESET_SHORT_STATE => --
+						state <= READ_CH2_LOW_STATE;
+
+					WHEN READ_CH2_LOW_STATE =>
+						-- TODO logic here
+						state <= ???;
+
+					WHEN WRITE_CH2_TRIGGER_STATE => --
+						state <= READ_CH2_HIGH_STATE;
+
+					WHEN WRITE_CH2_BRAM_STATE => --
+						state <= READ_CH2_HIGH_STATE;
+
+					WHEN READ_CH2_HIGH_STATE =>
+						-- TODO logic here
+						state <= ???;
+
+					WHEN WAIT_SAMPLE_INT_STATE =>
+						-- TODO logic here
+						state <= ???;
+
+					WHEN BRAM_FULL_STATE =>
+						-- TODO logic here
+						state <= ???
+
+					WHEN CLEAR_STORE_FLAG_STATE =>
+						-- TODO logic here
+						state <= ???;
+
+					END CASE;
+				END IF;
+			END IF;
+		END PROCESS;
+
+		-------------------------------------------------------------------------------
+		-- Dedicated Control Word spreadsheet
+		-------------------------------------------------------------------------------
+		output_process : PROCESS (state)
+		BEGIN
+			CASE state IS
+				WHEN RESET_STATE => cw <= '0' & '0' & '0' & '0' & '0' & '0' & '0' & '0' & '1' & '1' & '1' & '0' & "11" & "11" & "00" & "11" & "11";
+			END CASE;
+		END PROCESS;
+
+	END Behavioral;
