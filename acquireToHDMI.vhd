@@ -103,6 +103,14 @@ BEGIN
     -- TODO: Edit this to take data from boofers
     ch1Wave <= '1' when  (pixelHorz = pixelVert) else '0';
     ch2Wave <= '1' when  (pixelVert = triggerVolt) else '0';
+    
+    an7606convst <= cw(CONVST_CW_BIT_INDEX);
+	an7606rd <= cw(RD_CW_BIT_INDEX);
+	an7606cs <= cw(CS_CW_BIT_INDEX);
+	an7606reset <= cw(RESET_AD76076_CW_BIT_INDEX);
+	
+	sw(AD7606_BUSY_SW_INDEX) <= an7606busy;
+
 
     hdmiOen <= '1';
 

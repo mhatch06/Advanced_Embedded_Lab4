@@ -185,11 +185,11 @@ BEGIN
     addr_comp_inst : genericCompare
     GENERIC MAP (11)
     PORT MAP(
-        x =>  H_TOTAL,
+        x => H_TOTAL,
         y => wrAddr,
-        g => sw(FULL_SW_INDEX),
+        g => OPEN,
         l => OPEN,
-        e => OPEN
+        e => sw(FULL_SW_INDEX)
     );
 
     ch1_2sToPixel_inst : TwosToPixel
@@ -396,7 +396,7 @@ BEGIN
 
     -- SAMPLING COUNTER STUFF
 
-    sample_counter_inst_cw <= cw(SAMPLING_RATE_SELECT_CW_BIT1_INDEX) & cw(SAMPLING_RATE_SELECT_CW_BIT0_INDEX);
+    sample_counter_inst_cw <= cw(SAMPLING_COUNTER_CW_BIT1_INDEX) & cw(SAMPLING_COUNTER_CW_BIT0_INDEX);
 
     sample_counter_inst : genericCounter
     GENERIC MAP(32)
@@ -417,6 +417,8 @@ BEGIN
         l => OPEN,
         e => sampleCounterDone
     );
+    
+    sw(SAMPLE_SW_INDEX) <= sampleCounterDone;
     
     -- SR Latch
     PROCESS (clk)
