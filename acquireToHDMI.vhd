@@ -2,9 +2,11 @@
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
 USE IEEE.STD_LOGIC_UNSIGNED.ALL;
+USE IEEE.NUMERIC_STD.ALL;
 USE work.acquireToHDMI_package.ALL;
-USE work.hdmi_package.ALL;
+-- USE work.hdmi_package.ALL;
 USE work.basicBuildingBlocks_package.ALL;
+
 
 -- TODO:  include your library here with added components ac97, ac97cmd
 
@@ -32,11 +34,12 @@ END acquireToHDMI;
 
 ARCHITECTURE behavior OF acquireToHDMI IS
 
-    SIGNAL cw : STD_LOGIC_VECTOR(CW_WIDTH - 1 DOWNTO 0);
-    SIGNAL sw : STD_LOGIC_VECTOR(SW_WIDTH - 1 DOWNTO 0);
+    SIGNAL cw : STD_LOGIC_VECTOR(CW_WIDTH - 1 DOWNTO 0) := (others => '0');
+    SIGNAL sw : STD_LOGIC_VECTOR(SW_WIDTH - 1 DOWNTO 0) := (others => '0');
     SIGNAL forcedMode : STD_LOGIC;
 
-
+    SIGNAL ch1data : STD_LOGIC_VECTOR(15 downto 0);
+    SIGNAL ch2data : STD_LOGIC_VECTOR(15 downto 0);
 
     -- HDMI:
     signal red, green, blue: STD_LOGIC_VECTOR(7 downto 0);
@@ -61,34 +64,35 @@ ARCHITECTURE behavior OF acquireToHDMI IS
 BEGIN
     -- Signal Acquire
 
-    
 
 
     ------------------------------------------------------------------------------
     -- Button Process
     ------------------------------------------------------------------------------
 
-
-    -- TODO: Add forced button stuff here (currently just HDMI trigger moving)
-
-    process(sysClk)
+    -- i hate buttons
+    sw(FORCED_SW_INDEX) <= '0';
+    -- is forcedMode assigned to the actual MODE??
+    process(clk)
     begin
-        if rising_edge(sysClk) then
+        if rising_edge(clk) then
             if resetn = '0' then
                 btnPressed <= "000";
-                triggerTime <= std_logic_vector(to_unsigned(650, VIDEO_WIDTH_IN_BITS));
-                triggerVolt <= std_logic_vector(to_unsigned(360, VIDEO_WIDTH_IN_BITS));
+                -- triggerTime <= std_logic_vector(to_unsigned(650, VIDEO_WIDTH_IN_BITS));
+                -- triggerVolt <= std_logic_vector(to_unsigned(360, VIDEO_WIDTH_IN_BITS));
             else
                 btnPressed <= (btnLast xor btn) and btn;
                 
-                if   ((btnPressed(0) = '1') and (btn(2) = '0')) then
-                    triggerTime <= triggerTime + 10;
-                elsif((btnPressed(0) = '1') and (btn(2) = '1')) then
-                    triggerTime <= triggerTime - 10;
-                elsif((btnPressed(1) = '1') and (btn(2) = '0')) then
-                    triggerVolt <= triggerVolt + 10;
-                elsif((btnPressed(1) = '1') and (btn(2) = '1')) then
-                    triggerVolt <= triggerVolt - 10;
+--                if   ((btnPressed(1) = '1')) then
+--                    if (sw(FORCED_SW_INDEX) = '0') then
+--                        sw(FORCED_SW_INDEX) <= '1';
+--                    else
+--                        sw(FORCED_SW_INDEX) <= '0';
+--                    end if;
+--                end if;
+                
+                if((btnPressed(0) = '1')) then
+                    sw(SINGLE_SW_INDEX) <= '1';
                 end if;
             end if;
             
@@ -102,12 +106,36 @@ BEGIN
 
     hdmiOen <= '1';
 
-    sw(SINGLE_FORCED_TRIGGER_SW_BIT_INDEX) <= buttonActivity(0);
-    triggerCh2 <= sw(CH2_TRIGGER_SW_BIT_INDEX);
+    -- SHOULD THIS BE COMMENTED OUT???
+    --sw(SINGLE_FORCED_TRIGGER_SW_BIT_INDEX) <= buttonActivity(0);
+    --triggerCh2 <= sw(CH2_TRIGGER_SW_BIT_INDEX);
 
+    
+     -- NOT SURE IF THIS IS ZERO
+    triggerTime <= std_logic_vector(to_unsigned(650, VIDEO_WIDTH_IN_BITS));
+    -- triggerVolt <= std_logic_vector(to_unsigned(360, VIDEO_WIDTH_IN_BITS));
+
+    
     datapath_inst : acquireToHDMI_datapath
-    ch1Data16bitSLV => OPEN,
+        PORT MAP(
+            clk => clk,
+            resetn => resetn,
+            cw => cw,
+            sw => sw(DATAPATH_SW_WIDTH - 1 downto 0),
+            an7606data => an7606data, 
+    
+            triggerVolt16bitSigned => "0000000000000000",
+            triggerTimePixel => triggerTime,
+            ch1Data16bitSLV => ch1data,
+            ch2Data16bitSLV => ch2data,
+    
+            tmdsDataP => tmdsDataP,
+            tmdsDataN => tmdsDataN,
+            tmdsClkP => tmdsClkP,
+            tmdsClkN => tmdsClkN,
+            hdmiOen => hdmiOen
     );
+    
 
     control_inst : acquireToHDMI_fsm
     PORT MAP(

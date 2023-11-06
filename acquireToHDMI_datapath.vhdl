@@ -21,10 +21,11 @@ LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
 USE IEEE.NUMERIC_STD.ALL;
 
+
 USE work.acquireToHDMI_Package.ALL;
 USE work.basicBuildingBlocks_package.ALL;
-USE work.hdmi_package.ALL;
-USE work.TwosToPixel.ALL;
+-- USE work.hdmi_package.ALL;
+--USE work.TwosToPixel;
 
 ENTITY acquireToHDMI_datapath IS
     PORT (
@@ -34,7 +35,7 @@ ENTITY acquireToHDMI_datapath IS
         sw : OUT STD_LOGIC_VECTOR(DATAPATH_SW_WIDTH - 1 DOWNTO 0);
         an7606data : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
 
-        triggerVolt16bitSigned : IN SIGNED(15 DOWNTO 0);
+        triggerVolt16bitSigned : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
         triggerTimePixel : IN STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS - 1 DOWNTO 0);
         ch1Data16bitSLV, ch2Data16bitSLV : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
 
@@ -48,44 +49,71 @@ END acquireToHDMI_datapath;
 
 ARCHITECTURE behavior OF acquireToHDMI_datapath IS
 
+    SIGNAL red, green, blue: STD_LOGIC_VECTOR(7 downto 0);
+    SIGNAL videoClk, videoClk5x, clkLocked: STD_LOGIC;
+    SIGNAL triggerTime, triggerVolt: STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS-1 downto 0);
+    
+    signal doutb_2sComp : STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS - 1 downto 0);
+    
+    signal bram_addr_b : STD_LOGIC_VECTOR(10 downto 0);
+    
+    signal conversionPlusReadoutTime  : STD_LOGIC;
+    signal sampleTimerRollover : STD_LOGIC;
+    signal an7606convst : STD_LOGIC;
+    signal an7606od : STD_LOGIC_VECTOR(2 downto 0);
+    
+    signal ch1_last_signed : SIGNED(15 downto 0);
+    signal ch2_last_signed : SIGNED(15 downto 0);
+    signal ch1_curr_signed : SIGNED(15 downto 0);
+    signal ch2_curr_signed : SIGNED(15 downto 0);
+    
+    signal sample_counter_inst_cw : STD_LOGIC_VECTOR(1 downto 0);
+
     SIGNAL storeIntoBramFlag : STD_LOGIC;
 
-    SIGNAL addr_counter_inst_c, short_counter_inst_cw : STD_LOGIC_VECTOR(15 downto 0);
-    SIGNAL wrAddr : STD_LOGIC_VECTOR(15 downto 0);
-    SIGNAL ch1_curr, ch2_curr, ch1_last, ch2_last : STD_LOGIC_VECTOR(15 downto 0);
-    
-    SIGNAL shortCounterCount : STD_LOGIC_VECTOR(SHORT_DELAY_50Mhz_CONST_WIDTH - 1 : 0);
+    SIGNAL addr_counter_inst_c, short_counter_inst_cw : STD_LOGIC_VECTOR(1 DOWNTO 0);
+    SIGNAL wrAddr : STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS - 1 DOWNTO 0);
+    SIGNAL ch1_curr, ch2_curr, ch1_last, ch2_last : STD_LOGIC_VECTOR(15 DOWNTO 0);
+
+    SIGNAL shortCounterCount : STD_LOGIC_VECTOR(SHORT_DELAY_50Mhz_CONST_WIDTH - 1 downto 0);
+
+    SIGNAL hsync, vsync, vde : STD_LOGIC;
+    SIGNAL pixelHorz : STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS - 1 downto 0);
+    SIGNAL pixelVert : STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS - 1 downto 0);
 
     SIGNAL shortCounterDone, longCounterDone : STD_LOGIC;
 
-    SIGNAL trigVscr : STD_LOGIC_VECTOR(15 downto 0);
+    SIGNAL trigVscr : STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS - 1 DOWNTO 0);
 
-    SIGNAL ch1_ram_output : STD_LOGIC_VECTOR(15 downto 0);
-    SIGNAL ch2_ram_output : STD_LOGIC_VECTOR(15 downto 0);
+    SIGNAL ch1_ram_output : STD_LOGIC_VECTOR(15 DOWNTO 0); 
+    SIGNAL ch2_ram_output : STD_LOGIC_VECTOR(15 DOWNTO 0);
 
+    SIGNAL sampleCounterCount : STD_LOGIC_VECTOR(31 DOWNTO 0);
+    signal reset : STD_LOGIC;
+    signal ch2_doutb_2sComp : STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS - 1 downto 0);
+    
+    signal long_counter_inst_cw : STD_LOGIC_VECTOR(1 downto 0);
+    
+    signal longCounterCount : STD_LOGIC_VECTOR(23 downto 0);
+    
+    signal ch2_curr_trig_G, ch1_curr_trig_G, ch1_last_trig_G, ch1_curr_trig_L, ch2_last_trig_G, ch2_curr_trig_L  : STD_LOGIC;
+    
+    signal sampleCounterDone, ch1, ch2 : STD_LOGIC;
+    
 BEGIN
+    reset <= not resetn;
+    
+    -- QUESTION: What is trigger, ch1 trigger, and ch2 trigger?
 
-    -- Simple SR Latch to assist FSM
-    PROCESS (clk)
-    BEGIN
-        IF (rising_edge(clk)) THEN
-            IF (resetn = '0') THEN
-                storeIntoBramFlag <= '0';
-            ELSIF (cw(SET_STORE_FLAG_CW_BIT_INDEX) = '1') THEN
-                storeIntoBramFlag <= '1';
-            ELSIF (cw(CLEAR_STORE_FLAG_CW_BIT_INDEX) = '1') THEN
-                storeIntoBramFlag <= '0';
-            END IF;
-        END IF;
-    END PROCESS;
+    
 
-    sw(STORE_INTO_BRAM_SW_BIT_INDEX) <= storeIntoBramFlag;
+    sw(STORE_TO_BRAM_SW_INDEX) <= storeIntoBramFlag;
 
     -- HDMI Out
 
     vsg : videoSignalGenerator
     PORT MAP(
-        clk => videoClk,
+        clk => clk,
         resetn => resetn,
         hs => hsync,
         vs => vsync,
@@ -109,6 +137,8 @@ BEGIN
         green => green,
         blue => blue);
 
+
+    
     hdmi_inst : hdmi_tx_0
     PORT MAP(
         pix_clk => videoClk,
@@ -143,214 +173,192 @@ BEGIN
     addr_counter_inst_c <= cw(DATA_STORAGE_COUNTER_CW_BIT1_INDEX) & cw(DATA_STORAGE_COUNTER_CW_BIT0_INDEX);
 
     addr_counter_inst : genericCounter
-    generic(N = 16)
+    GENERIC MAP (11)
     PORT MAP(
         clk => clk,
         resetn => resetn,
         c => addr_counter_inst_c,
-        d => "0000000000000000",
+        d => "00000000000",
         q => wrAddr
     );
 
     addr_comp_inst : genericCompare
-    generic(N = 16)
+    GENERIC MAP (11)
     PORT MAP(
-        x => H_TOTAL,
+        x =>  H_TOTAL,
         y => wrAddr,
         g => sw(FULL_SW_INDEX),
-        l => open,
-        e => open
+        l => OPEN,
+        e => OPEN
     );
 
-    ch1_2sToPixel_inst : 2sToPixel
-    PORT (
-        inputTwosComp <= ch1_ram_output,
-        pixel <= doutb_2sComp 
+    ch1_2sToPixel_inst : TwosToPixel
+    PORT MAP (
+        inputTwosComp => ch1_ram_output,
+        pixel => doutb_2sComp
     );
 
     ch1_pixel_comp : genericCompare
-    generic(N = 16)
+    GENERIC MAP (11)
     PORT MAP(
         x => doutb_2sComp,
-        y => pixelV,
-        g => open,
-        l => open,
-        e => sw(TRIG_CH1_WRITE_CW_BIT_INDEX)
+        y => pixelVert,
+        g => OPEN,
+        l => OPEN,
+        e => ch1
     );
+    
+    bram_addr_b <= std_logic_vector(unsigned(pixelHorz) - unsigned(L_EDGE));
 
     bram_ch1_inst : blk_mem_gen_0
-    PORT (
-        clka <= clk,
-        ena <= '1',
-        wea <= cw(DATA_STORAGE_CH1_WRITE_CW_BIT_INDEX),
-        addra <= wrAddr,
-        dina <= an7606data,
-        clkb <= videoClk,
-        enb <= '1',
-        addrb <= pixelHorz - L_EDGE,
-        doutb <= ch1_ram_output
+    PORT MAP (
+        clka => clk,
+        ena => '1',
+        wea => cw(DATA_STORAGE_CH1_WRITE_CW_BIT_INDEX downto DATA_STORAGE_CH1_WRITE_CW_BIT_INDEX),
+        addra => wrAddr,
+        dina => an7606data,
+        clkb => videoClk,
+        enb => '1',
+        addrb => bram_addr_b,
+        doutb => ch1_ram_output
     );
 
     ch1_curr_reg_inst : genericRegister
-    generic(N = 16)
-    PORT (
-        clk <= clk,
-        resetn <= resetn,
-        load <= cw(TRIG_CH1_WRITE_CW_BIT_INDEX),
-        d <= an7606data,
-        q <= ch1_curr
+    GENERIC MAP (16)
+    PORT MAP (
+        clk => clk,
+        resetn => resetn,
+        load => cw(TRIG_CH1_WRITE_CW_BIT_INDEX),
+        d => an7606data,
+        q => ch1_curr
     );
 
-     TODO: Convert ch1_curr to signed
+    ch1_last_signed <= SIGNED(ch1_last);
+    ch1_curr_signed <= SIGNED(ch1_curr);
+    
+    ch2_last_signed <= SIGNED(ch2_last);
+    ch2_curr_signed <= SIGNED(ch2_curr);
 
-     TODO: This comparater needs to be a signed comparator
-    ch1_curr_comp_inst : genericCompare
-    generic(N = 16)
-    PORT (
-        x <= ch1_curr_signed,
-        y <= trigVolt16_signed,
-        g <= ch1_curr_trig_G,
-        l <= open,
-        e <= open
-    );
+   
+    ch1_curr_trig_G <= '1'
+    when ch1_curr_signed > SIGNED(triggerVolt16bitSigned)  
+    else '0';
 
     ch1_last_reg_inst : genericRegister
-    generic(N = 16)
-    PORT (
-        clk <= clk,
-        resetn <= resetn,
-        load <= cw(TRIG_CH2_WRITE_CW_BIT_INDEX),
-        d <= ch1_curr,
-        q <= ch1_last;
+    GENERIC MAP(16)
+    PORT MAP(
+        clk => clk,
+        resetn => resetn,
+        load => cw(TRIG_CH2_WRITE_CW_BIT_INDEX),
+        d => ch1_curr,
+        q => ch1_last
     );
 
-    -- TODO: when/else instead of this instantiation crap
-    ch1_last_comp_inst : genericCompare
-    generic(N = 16)
-    PORT (
-        x <= ch1_last_signed,
-        y <= trigVolt16_signed,
-        g <= open,
-        l <= ch1_curr_trig_L,
-        e <= open
-    );
 
-    sw(CH1_TRIGGER_SW_INDEX) <= ch1_curr_trig_L and ch1_curr_trig_G;
+    
+    
+    ch1_last_trig_G <= '1' when ch1_last_signed > SIGNED(triggerVolt16bitSigned) else '0';
+
+        
+        
+
+    sw(CH1_TRIGGER_SW_INDEX) <= ch1_curr_trig_L AND ch1_curr_trig_G;
+    sw(TRIGGER_SW_INDEX) <=  ch1_curr_trig_L AND ch1_curr_trig_G;
 
     -- END CH1 BRAM
 
-
-
     -- CH2 BRAM
-    TODO: doutb_2sComp
 
-    ch1_2sToPixel_inst : 2sToPixel
-    PORT (
-        inputTwosComp <= ch1_ram_output,
-        pixel <= ch2_doutb_2sComp 
+    ch2_2sToPixel_inst : TwosToPixel
+    PORT MAP(
+        inputTwosComp => ch1_ram_output,
+        pixel => ch2_doutb_2sComp
     );
 
     ch2_pixel_comp : genericCompare
-    generic(N = 16)
+    GENERIC MAP(11)
     PORT MAP(
         x => ch2_doutb_2sComp,
-        y => pixelV,
-        g => open,
-        l => open,
-        e => sw(TRIG_CH2_WRITE_CW_BIT_INDEX)
+        y => pixelVert,
+        g => OPEN,
+        l => OPEN,
+        e => ch2
+    );
+    
+    
+    bram_ch2_inst : blk_mem_gen_0
+    PORT MAP (
+        clka => clk,
+        ena => '1',
+        wea => cw(DATA_STORAGE_CH2_WRITE_CW_BIT_INDEX downto DATA_STORAGE_CH2_WRITE_CW_BIT_INDEX),
+        addra => wrAddr,
+        dina => an7606data,
+        clkb => videoClk,
+        enb => '1',
+        addrb => bram_addr_b,
+        doutb => ch2_ram_output
     );
 
-    bram_ch2_inst : blk_mem_gen_0
-    PORT (
-        clka <= clk,
-        ena <= '1',
-        wea <= cw(DATA_STORAGE_CH2_WRITE_CW_BIT_INDEX),
-        addra <= wrAddr,
-        dina <= an7606data,
-        clkb <= videoClk,
-        enb <= '1',
-        addrb <= pixelHorz - L_EDGE,
-        doutb <= ch2_ram_output
-    );
 
     ch2_curr_reg_inst : genericRegister
-    generic(N = 16)
-    PORT (
-        clk <= clk,
-        resetn <= resetn,
-        load <= cw(TRIG_CH2_WRITE_CW_BIT_INDEX),
-        d <= an7606data,
-        q <= ch2_curr
+    GENERIC MAP(16)
+    PORT MAP(
+        clk => clk,
+        resetn => resetn,
+        load => cw(TRIG_CH2_WRITE_CW_BIT_INDEX),
+        d => an7606data,
+        q => ch2_curr
     );
 
-    -- TODO: Convert ch2_curr to signed
+    ch2_last_signed <=  SIGNED(ch2_last);
+    ch2_curr_signed <= SIGNED(ch2_curr);
 
-    -- TODO: This comparater needs to be a signed comparator
-    ch2_curr_comp_inst : genericCompare
-    generic(N = 16)
-    PORT (
-        x <= ch2_curr_signed,
-        y <= trigVolt16_signed,
-        g <= ch2_curr_trig_G,
-        l <= open,
-        e <= open
-    );
+    ch2_curr_trig_G <= '1' when ch2_curr_signed > SIGNED(triggerVolt16bitSigned) else '0';
+
 
     ch2_last_reg_inst : genericRegister
-    generic(N = 16)
-    PORT (
-        clk <= clk,
-        resetn <= resetn,
-        load <= cw(TRIG_CH2_WRITE_CW_BIT_INDEX),
-        d <= ch2_curr,
-        q <= ch2_last;
+    GENERIC MAP(16)
+    PORT MAP(
+        clk => clk,
+        resetn => resetn,
+        load => cw(TRIG_CH2_WRITE_CW_BIT_INDEX),
+        d => ch2_curr,
+        q => ch2_last
     );
 
-    -- TODO: Convert ch1_last to signed
-
-    -- TODO: This comparater needs to be a signed comparator
-    ch2_last_comp_inst : genericCompare
-    generic(N = 16)
-    PORT (
-        x <= ch2_last_signed,
-        y <= trigVolt16_signed,
-        g <= open,
-        l <= ch2_curr_trig_L,
-        e <= open
-    );
-
-    sw(CH2_TRIGGER_SW_INDEX) <= ch2_curr_trig_L and ch2_curr_trig_G;
-
-    -- END CH1 BRAM
+    
+    ch2_last_trig_G <= '1' when ch2_last_signed > SIGNED(triggerVolt16bitSigned) else '0';
+    sw(CH2_TRIGGER_SW_INDEX) <= ch2_curr_trig_L AND ch2_curr_trig_G;
 
 
+    -- END CH2 BRAM
 
     -- SHORT COUNTER
 
     short_counter_inst_cw <= cw(SHORT_DELAY_COUNTER_CW_BIT1_INDEX) & cw(SHORT_DELAY_COUNTER_CW_BIT0_INDEX);
 
     short_counter_inst : genericCounter
-    generic(N = SHORT_DELAY_50Mhz_CONST_WIDTH)
-    PORT (
-        clk <= clk,
-        resetn <= resetn,
-        c <= short_counter_inst_cw,
-        d <= "00000000",
-        q <= shortCounterCount
+    GENERIC MAP(SHORT_DELAY_50Mhz_CONST_WIDTH)
+    PORT MAP(
+        clk => clk,
+        resetn => resetn,
+        c => short_counter_inst_cw,
+        d => "00000000",
+        q => shortCounterCount
     );
 
     short_counter_comp_inst : genericCompare
-    generic(N = SHORT_DELAY_50Mhz_CONST_WIDTH)
-    PORT (
-        x <= shortCounterCount,
-        y <= SHORT_DELAY_50Mhz_COUNTS,
-        g <= open,
-        l <= open,
-        e <= shortCounterDone
-    )
+    GENERIC MAP(SHORT_DELAY_50Mhz_CONST_WIDTH)
+    PORT MAP(
+        x => shortCounterCount,
+        y => SHORT_DELAY_50Mhz_COUNTS,
+        g => OPEN,
+        l => OPEN,
+        e => shortCounterDone
+    );
 
     sw(SHORT_DELAY_SW_INDEX) <= shortCounterDone;
-    
+
     -- END SHORT COUNTER
 
     -- LONG COUNTER
@@ -358,37 +366,83 @@ BEGIN
     long_counter_inst_cw <= cw(LONG_DELAY_COUNTER_CW_BIT1_INDEX) & cw(LONG_DELAY_COUNTER_CW_BIT0_INDEX);
 
     long_counter_inst : genericCounter
-    generic(N = LONG_DELAY_50Mhz_CONST_WIDTH)
-    PORT (
-        clk <= clk,
-        resetn <= resetn,
-        c <= LONG_counter_inst_cw,
-        d <= "00000000",
-        q <= longCounterCount
+    GENERIC MAP(LONG_DELAY_50Mhz_CONST_WIDTH)
+    PORT MAP(
+        clk => clk,
+        resetn => resetn,
+        c => LONG_counter_inst_cw,
+        d => "000000000000000000000000",
+        q => longCounterCount
     );
 
     long_counter_comp_inst : genericCompare
-    generic(N = LONG_DELAY_50Mhz_CONST_WIDTH)
-    PORT (
-        x <= longCounterCount,
-        y <= LONG_DELAY_50Mhz_COUNTS,
-        g <= open,
-        l <= open,
-        e <= longCounterDone
-    )
-
-    sw(LONG_DELAY_SW_INDEX) <= longCounterDone;
-    
-    -- END LONG COUNTER
-
-
-    triggerVolt2sToPixel : 2sToPixel
-    PORT (
-        inputTwosComp <= triggerVolt16bitSigned,
-        pixel <= trigVscr 
+    GENERIC MAP(LONG_DELAY_50Mhz_CONST_WIDTH)
+    PORT MAP(
+        x => longCounterCount,
+        y => LONG_DELAY_50Mhz_COUNTS,
+        g => OPEN,
+        l => OPEN,
+        e => longCounterDone
     );
 
+    sw(LONG_DELAY_SW_INDEX) <= longCounterDone;
 
+    -- END LONG COUNTER
+    triggerVolt2sToPixel : TwosToPixel
+        PORT MAP(
+            inputTwosComp => triggerVolt16bitSigned,
+            pixel => trigVscr
+        );
+
+    -- SAMPLING COUNTER STUFF
+
+    sample_counter_inst_cw <= cw(SAMPLING_RATE_SELECT_CW_BIT1_INDEX) & cw(SAMPLING_RATE_SELECT_CW_BIT0_INDEX);
+
+    sample_counter_inst : genericCounter
+    GENERIC MAP(32)
+    PORT MAP(
+        clk => clk,
+        resetn => resetn,
+        c => sample_counter_inst_cw,
+        d => "00000000000000000000000000000000",
+        q => sampleCounterCount
+    );
+
+    sample_counter_comp_inst : genericCompare
+    GENERIC MAP(32)
+    PORT MAP(
+        x => sampleCounterCount,
+        y => HIGHEST_RATE,
+        g => OPEN,
+        l => OPEN,
+        e => sampleCounterDone
+    );
+    
+    -- SR Latch
+    PROCESS (clk)
+    BEGIN
+        IF (rising_edge(clk)) THEN
+            IF (cw(SET_STORE_FLAG_CW_BIT_INDEX) = '1') THEN
+                sw(STORE_SW_INDEX) <= '1';
+                ELSIF (cw(CLEAR_STORE_FLAG_CW_BIT_INDEX) = '1') THEN
+                sw(STORE_SW_INDEX) <= '0';
+            END IF;
+        END IF;
+    END PROCESS;
+    
+    -- Simple SR Latch to assist FSM
+    PROCESS (clk)
+    BEGIN
+        IF (rising_edge(clk)) THEN
+            IF (resetn = '0') THEN
+                storeIntoBramFlag <= '0';
+                ELSIF (cw(SET_STORE_FLAG_CW_BIT_INDEX) = '1') THEN
+                storeIntoBramFlag <= '1';
+                ELSIF (cw(CLEAR_STORE_FLAG_CW_BIT_INDEX) = '1') THEN
+                storeIntoBramFlag <= '0';
+            END IF;
+        END IF;
+    END PROCESS;
 
     -- Simulation Clock process definition for 74.25Mhz  videoClk
     -- We are assuming that clk_period = 20ns is defined in acquireToHDMI_Package
@@ -416,7 +470,10 @@ BEGIN
     PORT MAP(
         clk_in1 => clk,
         clk_out1 => videoClk,
-        resetn => resetn,
+        reset => resetn,
         clk_out2 => videoClk5x);
+        
+        
+    
 
 END behavior;

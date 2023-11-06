@@ -71,7 +71,7 @@ BEGIN
 		IF (rising_edge(clk)) THEN
 			IF (resetn = '0') THEN
 				state <= RESET_STATE;
-			ELSE
+				ELSE
 				CASE state IS
 					WHEN RESET_STATE =>
 						state <= LONG_DELAY_STATE;
@@ -86,12 +86,13 @@ BEGIN
 							state <= WAIT_FORCED_STATE;
 						END IF;
 
-						-- KMAP MOMENT
 					WHEN WAIT_FORCED_STATE =>
-						IF (TODO fix this conditional) THEN
+						IF (FORCED_SW = '0') THEN
+							state <= SET_STORE_FLAG_STATE;
+						ELSIF (SINGLE_SW = '1' AND FORCED_SW = '1') THEN
 							state <= SET_STORE_FLAG_STATE;
 						END IF;
-					
+
 					WHEN SET_STORE_FLAG_STATE => --
 						state <= BEGIN_CONVERSION_STATE;
 
@@ -99,26 +100,26 @@ BEGIN
 						state <= ASSERT_CONVST_STATE;
 
 					WHEN ASSERT_CONVST_STATE => --
-						IF (SHORT_DELAY_SW) THEN
+						IF (SHORT_DELAY_SW = '1') THEN
 							state <= WAIT_BUSY_0_STATE;
 						END IF;
-						state <= BUSY
 
 					WHEN WAIT_BUSY_0_STATE => --
-						IF (AD7606_BUSY_SW) THEN
+						IF (AD7606_BUSY_SW = '1') THEN
 							state <= WAIT_BUSY_1_STATE;
 						END IF;
-						state <= BEGIN_CONVERSION_STATE;
 
 					WHEN WAIT_BUSY_1_STATE => --
-						IF (not AD_7606_BUSY_SW) THEN
+						IF (AD7606_BUSY_SW = '0') THEN
 							state <= READ_CH1_LOW_STATE;
 						END IF;
-						state <= ASSERT_CONVST_STATE;
 
 					WHEN READ_CH1_LOW_STATE =>
-						-- TODO logic here
-						state <= BUSY;
+						IF (STORE_SW = '1' AND SHORT_DELAY_SW = '1') THEN
+							state <= WRITE_CH1_BRAM_STATE;
+						ELSIF (STORE_SW = '0' AND SHORT_DELAY_SW = '1') THEN
+							state <= WRITE_CH1_TRIGGER_STATE;
+						END IF;
 
 					WHEN WRITE_CH1_TRIGGER_STATE => --
 						state <= READ_CH1_HIGH_STATE;
@@ -127,16 +128,19 @@ BEGIN
 						state <= READ_CH1_HIGH_STATE;
 
 					WHEN READ_CH1_HIGH_STATE =>
-						-- todo logic here
-						state <= ???;
+						IF (SHORT_DELAY_SW = '1') THEN
+							state <= RESET_SHORT_STATE;
+						END IF;
 
 					WHEN RESET_SHORT_STATE => --
 						state <= READ_CH2_LOW_STATE;
 
 					WHEN READ_CH2_LOW_STATE =>
-						-- TODO logic here
-						state <= ???;
-
+						IF (STORE_SW = '1' AND SHORT_DELAY_SW = '1') THEN
+							state <= WRITE_CH2_BRAM_STATE;
+						ELSIF (STORE_SW = '0' AND SHORT_DELAY_SW = '1') THEN
+							state <= WRITE_CH2_TRIGGER_STATE;
+						END IF;
 					WHEN WRITE_CH2_TRIGGER_STATE => --
 						state <= READ_CH2_HIGH_STATE;
 
@@ -144,34 +148,64 @@ BEGIN
 						state <= READ_CH2_HIGH_STATE;
 
 					WHEN READ_CH2_HIGH_STATE =>
-						-- TODO logic here
-						state <= ???;
+						IF (SHORT_DELAY_SW = '1') THEN
+							state <= WAIT_SAMPLE_INT_STATE;
+						END IF;
 
 					WHEN WAIT_SAMPLE_INT_STATE =>
-						-- TODO logic here
-						state <= ???;
+						IF (SAMPLE_SW = '1') THEN
+							IF (FULL_SW = '1') THEN
+								state <= BRAM_FULL_STATE;
+							ELSIF (FORCED_SW = '0' AND TRIGGER_SW = '1' AND STORE_SW = '0') THEN
+								state <= SET_STORE_FLAG_STATE;
+							ELSE
+								state <= BEGIN_CONVERSION_STATE;
+							END IF;
+						END IF;
 
 					WHEN BRAM_FULL_STATE =>
-						-- TODO logic here
-						state <= ???
+						IF (FORCED_SW = '1') THEN
+							state <= WAIT_FORCED_STATE;
+						ELSE
+							state <= CLEAR_STORE_FLAG_STATE;
+						END IF;
 
 					WHEN CLEAR_STORE_FLAG_STATE =>
-						-- TODO logic here
-						state <= ???;
+						state <= BEGIN_CONVERSION_STATE;
 
-					END CASE;
-				END IF;
+				END CASE;
 			END IF;
-		END PROCESS;
+		END IF;
+	END PROCESS;
 
-		-------------------------------------------------------------------------------
-		-- Dedicated Control Word spreadsheet
-		-------------------------------------------------------------------------------
-		output_process : PROCESS (state)
-		BEGIN
-			CASE state IS
-				WHEN RESET_STATE => cw <= '0' & '0' & '0' & '0' & '0' & '0' & '0' & '0' & '1' & '1' & '1' & '0' & "11" & "11" & "00" & "11" & "11";
-			END CASE;
-		END PROCESS;
+	-------------------------------------------------------------------------------
+	-- Dedicated Control Word spreadsheet
+	-------------------------------------------------------------------------------
+	output_process : PROCESS (state)
+	BEGIN
+		CASE state IS
+			WHEN RESET_STATE => cw <= '1' & '0' & '0' & '0' & '0' & '0' & '0' & '0' & '1' & '1' & '1' & '0' & "11" & "11" & "00" & "11" & "11";
+			WHEN LONG_DELAY_STATE => cw <= '0' & '0' & '0' & '0' & '0' & '0' & '0' & '0' & '1' & '1' & '1' & '0' & "11" & "11" & "00" & "10" & "11";
+			WHEN RESET_AD7606_STATE => cw <= '0' & '0' & '0' & '0' & '1' & '0' & '0' & '0' & '1' & '1' & '1' & '1' & "11" & "11" & "00" & "11" & "10";
+			WHEN WAIT_FORCED_STATE => cw <= '0' & '0' & '0' & '0' & '1' & '0' & '0' & '0' & '1' & '1' & '1' & '0' & "11" & "11" & "00" & "11" & "11";
+			WHEN SET_STORE_FLAG_STATE => cw <= '0' & '1' & '0' & '0' & '1' & '0' & '0' & '0' & '1' & '1' & '1' & '0' & "00" & "11" & "00" & "11" & "11";
+			WHEN BEGIN_CONVERSION_STATE => cw <= '0' & '0' & '0' & '0' & '1' & '1' & '0' & '0' & '1' & '1' & '0' & '0' & "10" & "11" & "00" & "11" & "11";
+			WHEN ASSERT_CONVST_STATE => cw <= '0' & '0' & '0' & '0' & '1' & '0' & '0' & '0' & '0' & '1' & '1' & '0' & "10" & "10" & "00" & "11" & "10";
+			WHEN WAIT_BUSY_0_STATE => cw <= '0' & '0' & '0' & '0' & '1' & '0' & '0' & '0' & '1' & '1' & '1' & '0' & "00" & "10" & "00" & "11" & "11";
+			WHEN WAIT_BUSY_1_STATE => cw <= '0' & '0' & '0' & '0' & '1' & '0' & '0' & '0' & '1' & '1' & '1' & '0' & "00" & "10" & "00" & "11" & "11";
+			WHEN READ_CH1_LOW_STATE => cw <= '0' & '0' & '0' & '0' & '1' & '0' & '0' & '0' & '1' & '0' & '0' & '0' & "00" & "10" & "00" & "11" & "10";
+			WHEN WRITE_CH1_TRIGGER_STATE => cw <= '0' & '0' & '0' & '1' & '1' & '0' & '0' & '0' & '1' & '1' & '0' & '0' & "00" & "10" & "00" & "11" & "11";
+			WHEN WRITE_CH1_BRAM_STATE => cw <= '0' & '0' & '0' & '0' & '1' & '0' & '0' & '1' & '1' & '1' & '0' & '0' & "00" & "10" & "00" & "11" & "11";
+			WHEN READ_CH1_HIGH_STATE => cw <= '0' & '0' & '0' & '0' & '1' & '0' & '0' & '0' & '1' & '1' & '0' & '0' & "00" & "10" & "00" & "11" & "10";
+			WHEN RESET_SHORT_STATE => cw <= '0' & '0' & '0' & '0' & '1' & '0' & '0' & '0' & '1' & '1' & '0' & '0' & "00" & "10" & "00" & "11" & "11";
+			WHEN READ_CH2_LOW_STATE => cw <= '0' & '0' & '0' & '0' & '1' & '0' & '0' & '0' & '1' & '0' & '0' & '0' & "00" & "10" & "00" & "11" & "10";
+			WHEN WRITE_CH2_TRIGGER_STATE => cw <= '0' & '0' & '1' & '0' & '1' & '0' & '0' & '0' & '1' & '1' & '0' & '0' & "00" & "10" & "00" & "11" & "11";
+			WHEN WRITE_CH2_BRAM_STATE => cw <= '0' & '0' & '0' & '0' & '1' & '0' & '1' & '0' & '1' & '1' & '0' & '0' & "00" & "10" & "00" & "11" & "11";
+			WHEN READ_CH2_HIGH_STATE => cw <= '0' & '0' & '0' & '0' & '1' & '0' & '0' & '0' & '1' & '1' & '0' & '0' & "00" & "10" & "00" & "11" & "11";
+			WHEN WAIT_SAMPLE_INT_STATE => cw <= '0' & '0' & '0' & '0' & '1' & '0' & '0' & '0' & '1' & '1' & '0' & '0' & "00" & "10" & "00" & "11" & "11";
+			WHEN BRAM_FULL_STATE => cw <= '0' & '0' & '0' & '0' & '0' & '0' & '0' & '0' & '1' & '1' & '0' & '0' & "00" & "11" & "00" & "11" & "11";
+			WHEN CLEAR_STORE_FLAG_STATE => cw <= '1' & '0' & '0' & '0' & '0' & '0' & '0' & '0' & '1' & '1' & '0' & '0' & "00" & "11" & "00" & "11" & "11";
+		END CASE;
+	END PROCESS;
 
-	END Behavioral;
+END Behavioral;

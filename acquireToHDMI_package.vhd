@@ -5,16 +5,16 @@ LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
 USE IEEE.STD_LOGIC_UNSIGNED.ALL;
 USE IEEE.NUMERIC_STD.ALL;
-USE work.hdmi_package.ALL;
+
 PACKAGE acquireToHDMI_package IS
   -- Clock period definitions
   CONSTANT clk_period : TIME := 20 ns; -- 50Mhz crystal input (XTL_IN).
 
   -- You need to complete this
-  TYPE state_type IS (RESET_STATE);
+  -- TYPE state_type IS (RESET_STATE);
   ---------------------------- CONTROL WORD -----------------------------
   CONSTANT CW_WIDTH : NATURAL := 22;
-  CONSTANT CONTROL_CW_WIDTH : NATURAL := xx;
+  --CONSTANT CONTROL_CW_WIDTH : NATURAL := xx;
 
   CONSTANT CLEAR_STORE_FLAG_CW_BIT_INDEX : NATURAL := 21;
   CONSTANT SET_STORE_FLAG_CW_BIT_INDEX : NATURAL := 20;
@@ -41,20 +41,23 @@ PACKAGE acquireToHDMI_package IS
 
   ---------------------------- STATUS WORD -----------------------------
   CONSTANT SW_WIDTH : NATURAL := 12;
-  CONSTANT DATAPATH_SW_WIDTH : NATURAL := 6;
+  CONSTANT DATAPATH_SW_WIDTH : NATURAL := 9;
+  --NOTE:  THIS MIGHT NOT BE RIGHT!!!!!!!!!
+  -- QUESTION: HOW LONG IS THIS?
 
   CONSTANT AD7606_BUSY_SW_INDEX : NATURAL := 11;
-  CONSTANT STORE_TO_BRAM_SW_INDEX : NATURAL := 10;
-  CONSTANT CH2_TRIGGER_SW_INDEX : NATURAL := 9;
-  CONSTANT CH1_TRIGGER_SW_INDEX : NATURAL := 8;
-  CONSTANT LONG_DELAY_SW_INDEX : NATURAL := 7;
-  CONSTANT SHORT_DELAY_SW_INDEX : NATURAL := 6;
-  CONSTANT FULL_SW_INDEX : NATURAL := 5;
-  CONSTANT SAMPLE_SW_INDEX : NATURAL := 4;
-  CONSTANT TRIGGER_SW_INDEX : NATURAL := 3;
-  CONSTANT STORE_SW_INDEX : NATURAL := 2;
-  CONSTANT FORCED_SW_INDEX : NATURAL := 1;
-  CONSTANT SINGLE_SW_INDEX : NATURAL := 0;
+  CONSTANT FORCED_SW_INDEX : NATURAL := 10;
+  CONSTANT SINGLE_SW_INDEX : NATURAL := 9;
+  CONSTANT CH2_TRIGGER_SW_INDEX : NATURAL := 8;
+  CONSTANT CH1_TRIGGER_SW_INDEX : NATURAL := 7;
+  CONSTANT STORE_TO_BRAM_SW_INDEX : NATURAL := 6;
+  CONSTANT LONG_DELAY_SW_INDEX : NATURAL := 5;
+  CONSTANT SHORT_DELAY_SW_INDEX : NATURAL := 4;
+  CONSTANT FULL_SW_INDEX : NATURAL := 3;
+  CONSTANT SAMPLE_SW_INDEX : NATURAL := 2;
+  CONSTANT TRIGGER_SW_INDEX : NATURAL := 1;
+  CONSTANT STORE_SW_INDEX : NATURAL := 0;
+ 
   ------------------------- OTHER CONSTANTS ----------------------------
 
   CONSTANT LONG_DELAY_50Mhz_CONST_WIDTH : NATURAL := 24;
@@ -151,6 +154,11 @@ PACKAGE acquireToHDMI_package IS
   --- top level instantiations
 
   COMPONENT acquireToHDMI_fsm IS
+    PORT (
+      clk : IN STD_LOGIC;
+      resetn : IN STD_LOGIC;
+      sw : IN STD_LOGIC_VECTOR(SW_WIDTH - 1 DOWNTO 0);
+      cw : OUT STD_LOGIC_VECTOR (CW_WIDTH - 1 DOWNTO 0));
   END COMPONENT;
 
   COMPONENT acquireToHDMI_datapath IS
@@ -160,8 +168,9 @@ PACKAGE acquireToHDMI_package IS
       cw : IN STD_LOGIC_VECTOR(CW_WIDTH - 1 DOWNTO 0);
       sw : OUT STD_LOGIC_VECTOR(DATAPATH_SW_WIDTH - 1 DOWNTO 0);
       an7606data : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
-
-      triggerVolt16bitSigned : IN SIGNED(15 DOWNTO 0);
+    
+        -- QUESTION: IS this signed of STD_LOGIC_VECTOR?
+      triggerVolt16bitSigned : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
       triggerTimePixel : IN STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS - 1 DOWNTO 0);
       ch1Data16bitSLV, ch2Data16bitSLV : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
 
@@ -173,12 +182,91 @@ PACKAGE acquireToHDMI_package IS
     );
   END COMPONENT;
 
+  COMPONENT videoSignalGenerator IS
+    PORT (
+      clk : IN STD_LOGIC;
+      resetn : IN STD_LOGIC;
+      hs : OUT STD_LOGIC;
+      vs : OUT STD_LOGIC;
+      de : OUT STD_LOGIC;
+      pixelHorz : OUT STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS - 1 DOWNTO 0);
+      pixelVert : OUT STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS - 1 DOWNTO 0));
+  END COMPONENT;
+
+  COMPONENT scopeFace IS
+    PORT (
+      clk : IN STD_LOGIC;
+      resetn : IN STD_LOGIC;
+      pixelHorz : IN STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS - 1 DOWNTO 0);
+      pixelVert : IN STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS - 1 DOWNTO 0);
+      triggerVolt : IN STD_LOGIC_VECTOR (VIDEO_WIDTH_IN_BITS - 1 DOWNTO 0);
+      triggerTime : IN STD_LOGIC_VECTOR (VIDEO_WIDTH_IN_BITS - 1 DOWNTO 0);
+      red : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+      green : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+      blue : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+      ch1 : IN STD_LOGIC;
+      ch1Enb : IN STD_LOGIC;
+      ch2 : IN STD_LOGIC;
+      ch2Enb : IN STD_LOGIC
+    );
+  END COMPONENT;
+
+  COMPONENT hdmi_tx_0 IS
+    PORT (
+      pix_clk : IN STD_LOGIC;
+      pix_clkx5 : IN STD_LOGIC;
+      pix_clk_locked : IN STD_LOGIC;
+      rst : IN STD_LOGIC;
+      red : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+      green : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+      blue : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+      hsync : IN STD_LOGIC;
+      vsync : IN STD_LOGIC;
+      vde : IN STD_LOGIC;
+      aux0_din : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+      aux1_din : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+      aux2_din : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+      ade : IN STD_LOGIC;
+      TMDS_CLK_P : OUT STD_LOGIC;
+      TMDS_CLK_N : OUT STD_LOGIC;
+      TMDS_DATA_P : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+      TMDS_DATA_N : OUT STD_LOGIC_VECTOR(2 DOWNTO 0));
+  END COMPONENT;
+  
+  component clk_wiz_0 is
+    PORT( 
+        clk_out1: out STD_LOGIC;
+        clk_out2: out STD_LOGIC;
+        reset: in STD_LOGIC;
+        locked: out STD_LOGIC;
+        clk_in1: in STD_LOGIC);
+    end component;
+
   COMPONENT acquireToHDMI IS
+  PORT (
+        clk : IN STD_LOGIC;
+        resetn : IN STD_LOGIC;
+        btn : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+        triggerCh1, triggerCh2 : OUT STD_LOGIC;
+        conversionPlusReadoutTime : OUT STD_LOGIC;
+        sampleTimerRollover : OUT STD_LOGIC;
+
+        an7606data : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+        an7606convst, an7606cs, an7606rd, an7606reset : OUT STD_LOGIC;
+        an7606od : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+        an7606busy : IN STD_LOGIC;
+
+        tmdsDataP : OUT STD_LOGIC_VECTOR (2 DOWNTO 0);
+        tmdsDataN : OUT STD_LOGIC_VECTOR (2 DOWNTO 0);
+        tmdsClkP : OUT STD_LOGIC;
+        tmdsClkN : OUT STD_LOGIC;
+        hdmiOen : OUT STD_LOGIC
+    );
   END COMPONENT;
 
   COMPONENT twosToPixel IS
     PORT (
-      inputTwosComp : IN STD_LOGIC_VECTOR(16 DOWNTO 0),
+      inputTwosComp : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
       pixel : OUT STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS - 1 DOWNTO 0)
     );
   END COMPONENT;
@@ -197,11 +285,11 @@ PACKAGE acquireToHDMI_package IS
       clka : IN STD_LOGIC;
       ena : IN STD_LOGIC;
       wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-      addra : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
+      addra : IN STD_LOGIC_VECTOR(10 DOWNTO 0);
       dina : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
       clkb : IN STD_LOGIC;
       enb : IN STD_LOGIC;
-      addrb : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
+      addrb : IN STD_LOGIC_VECTOR(10 DOWNTO 0);
       doutb : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
     );
   END COMPONENT;

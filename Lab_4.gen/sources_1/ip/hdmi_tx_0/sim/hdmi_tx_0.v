@@ -65,6 +65,10 @@ module hdmi_tx_0 (
   hsync,
   vsync,
   vde,
+  aux0_din,
+  aux1_din,
+  aux2_din,
+  ade,
   TMDS_CLK_P,
   TMDS_CLK_N,
   TMDS_DATA_P,
@@ -87,6 +91,10 @@ input wire [7 : 0] blue;
 input wire hsync;
 input wire vsync;
 input wire vde;
+input wire [3 : 0] aux0_din;
+input wire [3 : 0] aux1_din;
+input wire [3 : 0] aux2_din;
+input wire ade;
 (* X_INTERFACE_INFO = "xilinx.com:interface:hdmi:2.0 hdmi_tx TMDS_CLK_P" *)
 output wire TMDS_CLK_P;
 (* X_INTERFACE_INFO = "xilinx.com:interface:hdmi:2.0 hdmi_tx TMDS_CLK_N" *)
@@ -97,7 +105,7 @@ output wire [2 : 0] TMDS_DATA_P;
 output wire [2 : 0] TMDS_DATA_N;
 
   hdmi_tx_v1_0 #(
-    .MODE("DVI"),
+    .MODE("HDMI"),
     .C_RED_WIDTH(8),
     .C_GREEN_WIDTH(8),
     .C_BLUE_WIDTH(8)
@@ -112,10 +120,10 @@ output wire [2 : 0] TMDS_DATA_N;
     .hsync(hsync),
     .vsync(vsync),
     .vde(vde),
-    .aux0_din(4'B0),
-    .aux1_din(4'B0),
-    .aux2_din(4'B0),
-    .ade(1'B0),
+    .aux0_din(aux0_din),
+    .aux1_din(aux1_din),
+    .aux2_din(aux2_din),
+    .ade(ade),
     .TMDS_CLK_P(TMDS_CLK_P),
     .TMDS_CLK_N(TMDS_CLK_N),
     .TMDS_DATA_P(TMDS_DATA_P),

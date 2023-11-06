@@ -4,7 +4,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
-use work.scopeToHdmi_package.all;
+use work.acquiretohdmi_package.all;
 
 
 entity videoSignalGenerator is
@@ -15,7 +15,8 @@ entity videoSignalGenerator is
          vs: out STD_LOGIC;
          de: out STD_LOGIC;
          pixelHorz: out STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS-1 downto 0);
-         pixelVert: out STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS-1 downto 0));
+         pixelVert: out STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS-1 downto 0)
+     );
 end videoSignalGenerator;
 
 architecture behavior of videoSignalGenerator is

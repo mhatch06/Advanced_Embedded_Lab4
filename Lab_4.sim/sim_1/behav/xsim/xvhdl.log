@@ -1,0 +1,24 @@
+INFO: [VRFC 10-163] Analyzing VHDL file "Z:/EENG498/Lab_4/acquireToHDMI_package.vhd" into library xil_defaultlib
+INFO: [VRFC 10-163] Analyzing VHDL file "Z:/EENG498/Lab_4/TwosToPixel.vhdl" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'twosToPixel'
+INFO: [VRFC 10-163] Analyzing VHDL file "Z:/EENG498/basicBuildingBlocksVhdl/basicBuildingBlocksVhdl/basicBuildingBlocksVhdl_package.vhd" into library xil_defaultlib
+INFO: [VRFC 10-163] Analyzing VHDL file "Z:/EENG498/Lab_4/acquireToHDMI.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'acquireToHDMI'
+INFO: [VRFC 10-163] Analyzing VHDL file "Z:/EENG498/Lab_4/acquireToHDMI_datapath.vhdl" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'acquireToHDMI_datapath'
+INFO: [VRFC 10-163] Analyzing VHDL file "Z:/EENG498/Lab_4/acquireToHDMI_fsm.vhdl" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'acquireToHDMI_fsm'
+INFO: [VRFC 10-163] Analyzing VHDL file "Z:/EENG498/Lab_4/an7606.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'an7606'
+INFO: [VRFC 10-163] Analyzing VHDL file "Z:/EENG498/basicBuildingBlocksVhdl/basicBuildingBlocksVhdl/genericComparator.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'genericCompare'
+INFO: [VRFC 10-163] Analyzing VHDL file "Z:/EENG498/basicBuildingBlocksVhdl/basicBuildingBlocksVhdl/genericCounter.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'genericCounter'
+INFO: [VRFC 10-163] Analyzing VHDL file "Z:/EENG498/basicBuildingBlocksVhdl/basicBuildingBlocksVhdl/genericRegister.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'genericRegister'
+INFO: [VRFC 10-163] Analyzing VHDL file "Z:/EENG498/Lab_4/src_scopeToHdmi/scopeFace.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'scopeFace'
+INFO: [VRFC 10-163] Analyzing VHDL file "Z:/EENG498/Lab_4/src_scopeToHdmi/videoSignalGenerator.vhdl" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'videoSignalGenerator'
+INFO: [VRFC 10-163] Analyzing VHDL file "Z:/EENG498/Lab_4/acquireToHDMI_tb.vhd" into library xil_defaultlib
+INFO: [VRFC 10-3107] analyzing entity 'acquireToHDMI_tb'
