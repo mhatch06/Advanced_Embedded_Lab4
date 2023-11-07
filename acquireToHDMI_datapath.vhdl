@@ -113,7 +113,7 @@ BEGIN
 
     vsg : videoSignalGenerator
     PORT MAP(
-        clk => clk,
+        clk => videoClk,
         resetn => resetn,
         hs => hsync,
         vs => vsync,
