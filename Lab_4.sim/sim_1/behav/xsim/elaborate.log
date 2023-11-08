@@ -51,11 +51,6 @@ Compiling architecture behavior of entity xil_defaultlib.genericCounter [\generi
 Compiling architecture behavior of entity xil_defaultlib.genericCompare [\genericCompare(n=24)\]
 Compiling architecture behavior of entity xil_defaultlib.genericCounter [\genericCounter(n=32)\]
 Compiling architecture behavior of entity xil_defaultlib.genericCompare [\genericCompare(n=32)\]
-Compiling module unisims_ver.IBUF
-Compiling module unisims_ver.MMCME2_ADV(CLKFBOUT_MULT_F=59.37...
-Compiling module unisims_ver.BUFG
-Compiling module xil_defaultlib.clk_wiz_0_clk_wiz
-Compiling module xil_defaultlib.clk_wiz_0
 Compiling architecture behavior of entity xil_defaultlib.acquireToHDMI_datapath [acquiretohdmi_datapath_default]
 Compiling architecture behavioral of entity xil_defaultlib.acquireToHDMI_fsm [acquiretohdmi_fsm_default]
 Compiling architecture behavior of entity xil_defaultlib.acquireToHDMI [acquiretohdmi_default]

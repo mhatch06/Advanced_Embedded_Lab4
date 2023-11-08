@@ -9,17 +9,19 @@ restart
 
 add_wave  -color green /acquireToHDMI_tb/uut/clk
 add_wave  -color green /acquireToHDMI_tb/uut/resetn
+add_wave  -color green /acquireToHDMI_tb/uut/datapath_inst/clkLocked
 
 set groupColor YELLOW
 set TOP_ID [add_wave_group "topLevelIO"]
 add_wave -into $TOP_ID -color $groupColor -radix unsigned /acquireToHDMI_tb/uut/btn
-add_wave -into $TOP_ID -color $groupColor /acquireToHDMI_tb/uut/triggerCh1
+add_wave -into $TOP_ID -color $groupColor -radix unsigned /acquireToHDMI_tb/uut/forcedMode
+# add_wave -into $TOP_ID -color $groupColor /acquireToHDMI_tb/uut/triggerCh1
 add_wave -into $TOP_ID -color $groupColor -radix hex /acquireToHDMI_tb/uut/datapath_inst/ch1_curr
 add_wave -into $TOP_ID -color $groupColor -radix hex /acquireToHDMI_tb/uut/datapath_inst/ch1_last
 add_wave -into $TOP_ID -color $groupColor /acquireToHDMI_tb/uut/datapath_inst/ch1_curr_trig_G
 add_wave -into $TOP_ID -color $groupColor /acquireToHDMI_tb/uut/datapath_inst/ch1_curr_trig_L
-add_wave -into $TOP_ID -color $groupColor /acquireToHDMI_tb/uut/conversionPlusReadoutTime
-add_wave -into $TOP_ID -color $groupColor /acquireToHDMI_tb/uut/sampleTimerRollover
+# add_wave -into $TOP_ID -color $groupColor /acquireToHDMI_tb/uut/conversionPlusReadoutTime
+# add_wave -into $TOP_ID -color $groupColor /acquireToHDMI_tb/uut/sampleTimerRollover
 
 add_wave   -color aqua /acquireToHDMI_tb/uut/control_inst/state
 
@@ -102,7 +104,14 @@ add_wave -into $CW_ID -color $groupColor -name "LONG DELAY CNTR 0" /acquireToHDM
 add_wave -into $CW_ID -color $groupColor -name "SHORT DELAY CNTR 1" /acquireToHDMI_tb/uut/cw[1]
 add_wave -into $CW_ID -color $groupColor -name "SHORT DELAY CNTR 0" /acquireToHDMI_tb/uut/cw[0]
 
-
+set groupColor TEAL
+set VIDEO_ID [add_wave_group "Video Signals"]
+add_wave -into $VIDEO_ID -color $groupColor /acquireToHDMI_tb/uut/datapath_inst/sf/vLine
+add_wave -into $VIDEO_ID -color $groupColor /acquireToHDMI_tb/uut/datapath_inst/sf/hLine
+add_wave -into $VIDEO_ID -color $groupColor /acquireToHDMI_tb/uut/datapath_inst/sf/vHatch
+add_wave -into $VIDEO_ID -color $groupColor /acquireToHDMI_tb/uut/datapath_inst/sf/hHatch
+add_wave -into $VIDEO_ID -color $groupColor /acquireToHDMI_tb/uut/datapath_inst/sf/borderH
+add_wave -into $VIDEO_ID -color $groupColor /acquireToHDMI_tb/uut/datapath_inst/sf/borderV
 
 
 set FORCED_CHECK01        500ns   

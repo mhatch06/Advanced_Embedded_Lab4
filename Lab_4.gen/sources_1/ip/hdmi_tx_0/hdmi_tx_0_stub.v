@@ -2,9 +2,10 @@
 // Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 // --------------------------------------------------------------------------------
 // Tool Version: Vivado v.2023.1 (win64) Build 3865809 Sun May  7 15:05:29 MDT 2023
-// Date        : Sat Nov  4 14:15:11 2023
+// Date        : Sat Nov  4 14:15:08 2023
 // Host        : BB304-12 running 64-bit major release  (build 9200)
-// Command     : write_verilog -force -mode synth_stub z:/EENG498/Lab_4/Lab_4.gen/sources_1/ip/hdmi_tx_0/hdmi_tx_0_stub.v
+// Command     : write_verilog -force -mode synth_stub -rename_top hdmi_tx_0 -prefix
+//               hdmi_tx_0_ hdmi_tx_0_stub.v
 // Design      : hdmi_tx_0
 // Purpose     : Stub declaration of top-level module interface
 // Device      : xc7z010clg400-1

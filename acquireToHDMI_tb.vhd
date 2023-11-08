@@ -61,7 +61,7 @@ BEGIN
         an7606busy => an7606busy_t,
         tmdsDataP => OPEN,
         tmdsDataN => OPEN,
-        tmdsClkP => tmdsClkN_t,
+        tmdsClkP => tmdsClkP_t,
         tmdsClkN => tmdsClkN_t,
         hdmiOen => hdmiOen_t);
     
@@ -86,7 +86,7 @@ BEGIN
         WAIT FOR clk_period;
 
         -- commment out the following for forced mode
-        -- btn_t <= "010";     -- trigger mode
+         btn_t <= "010";     -- trigger mode
 
         WAIT UNTIL (an7606reset_t = '1');
         WAIT UNTIL (an7606reset_t = '0');

@@ -103,8 +103,8 @@ ARCHITECTURE behavior OF acquireToHDMI_datapath IS
 BEGIN
     reset <= not resetn;
     
-    -- QUESTION: What is trigger, ch1 trigger, and ch2 trigger?
-
+    
+    hdmiOen <= '1';
     
 
     sw(STORE_TO_BRAM_SW_INDEX) <= storeIntoBramFlag;
@@ -127,8 +127,8 @@ BEGIN
         resetn => resetn,
         pixelHorz => pixelHorz,
         pixelVert => pixelVert,
-        triggerTime => triggerTime,
-        triggerVolt => triggerVolt,
+        triggerTime => triggerTimePixel,
+        triggerVolt => trigVscr,
         ch1 => ch1,
         ch1enb => '1',
         ch2 => ch2,
@@ -185,7 +185,7 @@ BEGIN
     addr_comp_inst : genericCompare
     GENERIC MAP (11)
     PORT MAP(
-        x => H_TOTAL,
+        x =>STD_LOGIC_VECTOR(to_unsigned(1000, 11)),
         y => wrAddr,
         g => OPEN,
         l => OPEN,
@@ -235,13 +235,15 @@ BEGIN
 
     ch1_last_signed <= SIGNED(ch1_last);
     ch1_curr_signed <= SIGNED(ch1_curr);
-    
-    ch2_last_signed <= SIGNED(ch2_last);
-    ch2_curr_signed <= SIGNED(ch2_curr);
 
+    ch1Data16bitSLV <= ch1_curr;
    
     ch1_curr_trig_G <= '1'
     when ch1_curr_signed > SIGNED(triggerVolt16bitSigned)  
+    else '0';
+
+    ch1_curr_trig_L <= '1'
+    when ch1_last_signed < SIGNED(triggerVolt16bitSigned)  
     else '0';
 
     ch1_last_reg_inst : genericRegister
@@ -253,14 +255,8 @@ BEGIN
         d => ch1_curr,
         q => ch1_last
     );
-
-
-    
     
     ch1_last_trig_G <= '1' when ch1_last_signed > SIGNED(triggerVolt16bitSigned) else '0';
-
-        
-        
 
     sw(CH1_TRIGGER_SW_INDEX) <= ch1_curr_trig_L AND ch1_curr_trig_G;
     sw(TRIGGER_SW_INDEX) <=  ch1_curr_trig_L AND ch1_curr_trig_G;
@@ -310,12 +306,7 @@ BEGIN
         q => ch2_curr
     );
 
-    ch2_last_signed <=  SIGNED(ch2_last);
-    ch2_curr_signed <= SIGNED(ch2_curr);
-
-    ch2_curr_trig_G <= '1' when ch2_curr_signed > SIGNED(triggerVolt16bitSigned) else '0';
-
-
+    
     ch2_last_reg_inst : genericRegister
     GENERIC MAP(16)
     PORT MAP(
@@ -325,6 +316,28 @@ BEGIN
         d => ch2_curr,
         q => ch2_last
     );
+
+    ch2Data16bitSLV <= ch2_curr;
+
+    -- compare G ch2
+    ch2_curr_signed <= SIGNED(ch2_curr);
+
+    ch2_curr_trig_G <= '1' 
+    when ch2_curr_signed > SIGNED(triggerVolt16bitSigned) 
+    else '0';
+
+    -- compare L ch2
+
+    ch2_last_signed <= SIGNED(ch2_last);
+
+    ch2_curr_trig_L <= '1' 
+    when ch2_last_signed < SIGNED(triggerVolt16bitSigned) 
+    else '0';
+
+    -- ch2 AND gate
+
+
+
 
     
     ch2_last_trig_G <= '1' when ch2_last_signed > SIGNED(triggerVolt16bitSigned) else '0';
@@ -446,34 +459,37 @@ BEGIN
         END IF;
     END PROCESS;
 
-    -- Simulation Clock process definition for 74.25Mhz  videoClk
-    -- We are assuming that clk_period = 20ns is defined in acquireToHDMI_Package
-    -- 74.25Mhz has a period of 13.5ns   
-    --   videoClk_process :process
-    --   begin
-    --		videoClk <= '0';
-    --		wait for videoClk_period/2;
-    --		videoClk <= '1';
-    --		wait for videoClk_period/2;
-    --   end process;   
+--    -- Simulation Clock process definition for 74.25Mhz  videoClk
+--    -- We are assuming that clk_period = 20ns is defined in acquireToHDMI_Package
+--    -- 74.25Mhz has a period of 13.5ns   
+--        videoClk_process :process
+--        begin
+--     		videoClk <= '0';
+--     		wait for videoClk_period/2;
+--     		videoClk <= '1';
+--     		wait for videoClk_period/2;
+--        end process;   
 
-    -- Simulation Clock process definition for 371.25Mhz  videoClk5x
-    -- We are assuming that clk_period = 20ns is defined in acquireToHDMI_Package
-    -- 371.25Mhz has a period of 2.6936ns
-    --   videoClk5x_process :process
-    --   begin
-    --		videoClk5x <= '0';
-    --		wait for videoClk5x_period/2;
-    --		videoClk5x <= '1';
-    --		wait for videoClk5x_period/2;
-    --   end process;   
+--    -- -- Simulation Clock process definition for 371.25Mhz  videoClk5x
+--    -- -- We are assuming that clk_period = 20ns is defined in acquireToHDMI_Package
+--    -- -- 371.25Mhz has a period of 2.6936ns
+--        videoClk5x_process :process
+--        begin
+--     		videoClk5x <= '0';
+--     		wait for videoClk5x_period/2;
+--     		videoClk5x <= '1';
+--     		wait for videoClk5x_period/2;
+--        end process;
 
-    vc : clk_wiz_0
-    PORT MAP(
-        clk_in1 => clk,
-        clk_out1 => videoClk,
-        reset => resetn,
-        clk_out2 => videoClk5x);
+--        clkLocked <= '1';
+
+   vc : clk_wiz_0
+   PORT MAP(
+       clk_in1 => clk,
+       clk_out1 => videoClk,
+       reset => reset,
+       clk_out2 => videoClk5x,
+       locked => clkLocked);
         
         
     

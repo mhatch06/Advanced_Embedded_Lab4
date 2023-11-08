@@ -9,9 +9,9 @@ USE IEEE.NUMERIC_STD.ALL;
 PACKAGE acquireToHDMI_package IS
   -- Clock period definitions
   CONSTANT clk_period : TIME := 20 ns; -- 50Mhz crystal input (XTL_IN).
-
-  -- You need to complete this
-  -- TYPE state_type IS (RESET_STATE);
+  CONSTANT videoClk_period : TIME := 20 ns;
+  CONSTANT videoClk5x_period : TIME := 2.6936 ns;
+  
   ---------------------------- CONTROL WORD -----------------------------
   CONSTANT CW_WIDTH : NATURAL := 22;
   --CONSTANT CONTROL_CW_WIDTH : NATURAL := xx;
@@ -71,7 +71,7 @@ PACKAGE acquireToHDMI_package IS
   CONSTANT LOWEST_RATE : STD_LOGIC_VECTOR(31 DOWNTO 0) := STD_LOGIC_VECTOR(to_unsigned(1200, 32));
   CONSTANT LOW_RATE : STD_LOGIC_VECTOR(31 DOWNTO 0) := STD_LOGIC_VECTOR(to_unsigned(2400, 32));
   -----------------------------  HDMI  --------------------------------
-
+  
   CONSTANT VIDEO_WIDTH_IN_BITS : NATURAL := 11; -- 1650 "pixels" wide, this include FP, SYNCH and BP
 
   CONSTANT H_ACTIVE : STD_LOGIC_VECTOR(VIDEO_WIDTH_IN_BITS - 1 DOWNTO 0) := STD_LOGIC_VECTOR(to_unsigned(1280, VIDEO_WIDTH_IN_BITS));

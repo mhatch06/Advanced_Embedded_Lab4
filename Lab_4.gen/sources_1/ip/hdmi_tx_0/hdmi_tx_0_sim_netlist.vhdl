@@ -2,10 +2,10 @@
 -- Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 -- --------------------------------------------------------------------------------
 -- Tool Version: Vivado v.2023.1 (win64) Build 3865809 Sun May  7 15:05:29 MDT 2023
--- Date        : Sat Nov  4 14:15:12 2023
+-- Date        : Sat Nov  4 14:15:08 2023
 -- Host        : BB304-12 running 64-bit major release  (build 9200)
--- Command     : write_vhdl -force -mode funcsim
---               z:/EENG498/Lab_4/Lab_4.gen/sources_1/ip/hdmi_tx_0/hdmi_tx_0_sim_netlist.vhdl
+-- Command     : write_vhdl -force -mode funcsim -rename_top hdmi_tx_0 -prefix
+--               hdmi_tx_0_ hdmi_tx_0_sim_netlist.vhdl
 -- Design      : hdmi_tx_0
 -- Purpose     : This VHDL netlist is a functional simulation representation of the design and should not be modified or
 --               synthesized. This netlist cannot be used for SDF annotated simulation.
@@ -42,8 +42,6 @@ entity hdmi_tx_0_encode is
     \dout_reg[4]_3\ : in STD_LOGIC;
     AR : in STD_LOGIC_VECTOR ( 0 to 0 )
   );
-  attribute ORIG_REF_NAME : string;
-  attribute ORIG_REF_NAME of hdmi_tx_0_encode : entity is "encode";
 end hdmi_tx_0_encode;
 
 architecture STRUCTURE of hdmi_tx_0_encode is
@@ -5187,8 +5185,6 @@ entity hdmi_tx_0_serdes_10_to_1 is
     datain : in STD_LOGIC_VECTOR ( 9 downto 0 );
     AR : in STD_LOGIC_VECTOR ( 0 to 0 )
   );
-  attribute ORIG_REF_NAME : string;
-  attribute ORIG_REF_NAME of hdmi_tx_0_serdes_10_to_1 : entity is "serdes_10_to_1";
 end hdmi_tx_0_serdes_10_to_1;
 
 architecture STRUCTURE of hdmi_tx_0_serdes_10_to_1 is
@@ -5780,8 +5776,6 @@ entity hdmi_tx_0_srldelay is
     data_i : in STD_LOGIC_VECTOR ( 37 downto 0 );
     pix_clk : in STD_LOGIC
   );
-  attribute ORIG_REF_NAME : string;
-  attribute ORIG_REF_NAME of hdmi_tx_0_srldelay : entity is "srldelay";
 end hdmi_tx_0_srldelay;
 
 architecture STRUCTURE of hdmi_tx_0_srldelay is
@@ -6490,8 +6484,6 @@ entity hdmi_tx_0_hdmi_tx_v1_0 is
     rst : in STD_LOGIC;
     pix_clk_locked : in STD_LOGIC
   );
-  attribute ORIG_REF_NAME : string;
-  attribute ORIG_REF_NAME of hdmi_tx_0_hdmi_tx_v1_0 : entity is "hdmi_tx_v1_0";
 end hdmi_tx_0_hdmi_tx_v1_0;
 
 architecture STRUCTURE of hdmi_tx_0_hdmi_tx_v1_0 is

@@ -1,7 +1,5 @@
 # compile verilog/system verilog design source files
 verilog xil_defaultlib  --include "../../../../Lab_4.ip_user_files/ipstatic" \
-"../../../../Lab_4.gen/sources_1/ip/clk_wiz_0/clk_wiz_0_clk_wiz.v" \
-"../../../../Lab_4.gen/sources_1/ip/clk_wiz_0/clk_wiz_0.v" \
 "../../../../Lab_4.gen/sources_1/ip/blk_mem_gen_0/sim/blk_mem_gen_0.v" \
 "../../../../Lab_4.gen/sources_1/ip/hdmi_tx_0/hdl/encode.v" \
 "../../../../Lab_4.gen/sources_1/ip/hdmi_tx_0/hdl/serdes_10_to_1.v" \
